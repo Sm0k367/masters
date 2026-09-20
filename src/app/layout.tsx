@@ -17,9 +17,9 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Masters — all-chain crypto desk",
+  title: "Masters — live desk + all-chain tape",
   description:
-    "SOTA trading agents for every chain, with a Robinhood Wallet trench desk: daily brief, scanner, 60-second diligence, and a rules+LLM agent pit.",
+    "Automated live trader on an Agentic Robinhood book plus a Robinhood Wallet trench desk: daily brief, scanner, 60-second diligence, and a rules+LLM agent pit.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

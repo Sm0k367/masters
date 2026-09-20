@@ -7,6 +7,7 @@ import { useState, type FormEvent } from "react";
 import {
   Activity,
   BookOpen,
+  Bot,
   Crosshair,
   LayoutGrid,
   Radar,
@@ -19,6 +20,7 @@ import { Input } from "@/components/ui/input";
 const NAV = [
   { href: "/", label: "Daily", icon: Activity },
   { href: "/scan", label: "Scan", icon: Radar },
+  { href: "/live", label: "Live", icon: Bot },
   { href: "/agents", label: "Agents", icon: Terminal },
   { href: "/diligence", label: "60s check", icon: ShieldCheck },
   { href: "/chains", label: "All chains", icon: LayoutGrid },

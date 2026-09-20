@@ -202,3 +202,70 @@ export type ChainBoard = {
     volume24h: number;
   }[];
 };
+
+export type LiveVenue = "crypto" | "equity";
+
+export type LiveSymbol = "BTC" | "ETH" | "SOL" | "SPY" | "NVDA";
+
+export type LiveAction = "buy" | "sell" | "hold" | "skip";
+
+export type LiveFillStatus = "preview" | "submitted" | "filled" | "rejected";
+
+export type LivePosition = {
+  symbol: LiveSymbol;
+  venue: LiveVenue;
+  quantity: number;
+  avgCost: number;
+  mark: number;
+  valueUsd: number;
+  pnlPct: number;
+};
+
+export type LiveFill = {
+  id: string;
+  at: string;
+  symbol: LiveSymbol;
+  venue: LiveVenue;
+  side: "buy" | "sell";
+  notionalUsd: number;
+  status: LiveFillStatus;
+  brokerId: string | null;
+  refId: string | null;
+  reason: string;
+};
+
+export type LiveBook = {
+  armed: boolean;
+  accountMasked: string;
+  cash: number;
+  buyingPower: number;
+  cryptoBuyingPower: number;
+  positions: LivePosition[];
+  dailyNotional: number;
+  lastTickAt: string | null;
+  lastFillAt: string | null;
+};
+
+export type LiveIntent = {
+  action: LiveAction;
+  symbol: LiveSymbol | null;
+  venue: LiveVenue | null;
+  notionalUsd: number;
+  headline: string;
+  body: string;
+};
+
+export type LiveTick = {
+  generatedAt: string;
+  book: LiveBook;
+  intent: LiveIntent;
+  fills: LiveFill[];
+  config: {
+    clipUsd: number;
+    maxOpen: number;
+    stopPct: number;
+    maxDailyNotional: number;
+    cooldownMs: number;
+  };
+  notes: string[];
+};
