@@ -23,7 +23,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:43221](http://localhost:43221).
+Open [http://localhost:43221](http://localhost:43221). The dev server binds `0.0.0.0:43221` so LAN / preview proxies can reach it.
 
 Optional LLM (OpenAI-compatible, including a self-hosted FreeLLMAPI router):
 

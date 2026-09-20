@@ -126,12 +126,16 @@ export async function runDiligence(
       ),
     );
     const tax = Math.max(security.buyTax ?? 0, security.sellTax ?? 0);
+    const taxCopy =
+      security.buyTax == null && security.sellTax == null
+        ? "GoPlus did not report a buy/sell tax. Still verify in Wallet."
+        : `Buy tax ${security.buyTax ?? 0}% · sell tax ${security.sellTax ?? 0}%.`;
     checks.push(
       check(
         "tax",
         "Buy / sell tax",
         tax > 10 ? "fail" : tax > 5 ? "warn" : "pass",
-        `Buy tax ${security.buyTax ?? "n/a"}% · sell tax ${security.sellTax ?? "n/a"}%.`,
+        taxCopy,
       ),
     );
     checks.push(
