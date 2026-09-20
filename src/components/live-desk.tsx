@@ -171,7 +171,8 @@ export function LiveDesk({ initial }: { initial: LiveTick | null }) {
                     <div>
                       <div className="font-medium">{pos.symbol}</div>
                       <div className="font-mono text-[11px] text-muted-foreground">
-                        {pos.quantity.toPrecision(6)} · avg {formatUsd(pos.avgCost)} · {pos.venue}
+                        {pos.quantity.toPrecision(6)} · avg $
+                        {pos.avgCost.toFixed(2)} · {pos.venue}
                       </div>
                     </div>
                     <div className="text-right">
