@@ -7,7 +7,7 @@ import {
   dexTokenPairs,
   dexTrendingMetas,
 } from "@/lib/dexscreener";
-import { geckoNewPools, geckoTopPools, geckoTrending, isTrenchPair } from "@/lib/gecko";
+import { geckoNewPools, geckoTokenPools, geckoTopPools, geckoTrending, isTrenchPair } from "@/lib/gecko";
 import { settled } from "@/lib/http";
 import { applyBoosts, scoreMany, scorePair } from "@/lib/score";
 import type {
@@ -203,8 +203,10 @@ export async function resolveToken(
       : ["robinhood", "base", "eth", "bsc", "arbitrum", "solana"];
     for (const chain of chains) {
       const pairs = await settled(dexTokenPairs(chain, trimmed));
-      if (pairs && pairs.length) {
-        const ranked = [...pairs].sort((a, b) => b.liquidityUsd - a.liquidityUsd);
+      const gecko = pairs?.length ? null : await settled(geckoTokenPools(chain, trimmed));
+      const poolSet = pairs?.length ? pairs : gecko;
+      if (poolSet && poolSet.length) {
+        const ranked = [...poolSet].sort((a, b) => b.liquidityUsd - a.liquidityUsd);
         const preferred =
           ranked.find((pair) => preferredQuote(pair.quote.symbol, pair.chain)) ?? ranked[0];
         return scorePair(preferred);
