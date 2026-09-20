@@ -47,7 +47,8 @@ function heatFrom(chain: ChainKey, pairs: PairSnapshot[], launches: PairSnapshot
     (sum, pair) => sum + pair.txns.h24.buys + pair.txns.h24.sells,
     0,
   );
-  const top = [...pairs].sort((a, b) => b.volume.h24 - a.volume.h24)[0];
+  const trenchPairs = pairs.filter(isTrenchPair);
+  const top = [...trenchPairs].sort((a, b) => b.volume.h24 - a.volume.h24)[0];
   return {
     chain,
     label: CHAINS[chain].label,

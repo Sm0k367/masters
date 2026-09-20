@@ -18,6 +18,14 @@ function fallbackBrief(pair: ScoredPair, agents: AgentNote[]): string {
     .join(" ");
 }
 
+function usable(text: string | undefined): text is string {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  if (lower.includes("not enough credits") || lower.includes("top up")) return false;
+  if (lower.includes("rate limit") || lower.includes("quota")) return false;
+  return text.trim().length >= 60;
+}
+
 async function completeChat(messages: { role: "system" | "user"; content: string }[]): Promise<LlmResult> {
   const base = process.env.FREELLM_BASE_URL?.replace(/\/$/, "");
   const key = process.env.FREELLM_API_KEY;
@@ -43,7 +51,7 @@ async function completeChat(messages: { role: "system" | "user"; content: string
           model?: string;
         };
         const text = body.choices?.[0]?.message?.content?.trim();
-        if (text) return { text, model: body.model ?? model };
+        if (usable(text)) return { text, model: body.model ?? model };
       }
     } catch (error) {
       console.warn("FreeLLMAPI failed", error);
@@ -66,7 +74,7 @@ async function completeChat(messages: { role: "system" | "user"; content: string
         model?: string;
       };
       const text = body.choices?.[0]?.message?.content?.trim();
-      if (text) return { text, model: body.model ?? "pollinations" };
+      if (usable(text)) return { text, model: body.model ?? "pollinations" };
     }
   } catch (error) {
     console.warn("Pollinations failed", error);
