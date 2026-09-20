@@ -47,7 +47,8 @@ Without a key, the rules desk still runs. Briefings fall back to a public text e
 ## Deploy to Cloudflare
 
 Production Worker: `masters`  
-Custom domain: [https://masters.epictechai.app](https://masters.epictechai.app)
+Custom domain: [https://masters.epictechai.app](https://masters.epictechai.app)  
+Workers.dev: [https://masters.spyke6009.workers.dev](https://masters.spyke6009.workers.dev)
 
 This is an OpenNext Cloudflare Worker (`@opennextjs/cloudflare`), same path as the other Epic Tech AI Next.js desks. Wrangler attaches the custom domain on deploy — `epictechai.app` must stay on the same Cloudflare account.
 
