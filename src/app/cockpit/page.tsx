@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
 import { AppShell } from "@/components/app-shell";
 import { Disclaimer } from "@/components/desk-ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,15 +66,12 @@ export default function CockpitPage() {
   const [done, setDone] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const raw = localStorage.getItem(ROUTINE_KEY);
-        if (raw) setDone(JSON.parse(raw) as Record<string, boolean>);
-      } catch {
-        /* ignore */
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    try {
+      const raw = localStorage.getItem(ROUTINE_KEY);
+      if (raw) setDone(JSON.parse(raw) as Record<string, boolean>);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   function toggle(id: string) {

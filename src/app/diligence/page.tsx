@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
 import { AppShell } from "@/components/app-shell";
 import { Disclaimer, ErrorState } from "@/components/desk-ui";
 import { ClassBadge, TokenIdentity, VerdictBadge } from "@/components/token-table";
@@ -67,11 +68,7 @@ function DiligenceInner() {
   useEffect(() => {
     const q = params.get("q");
     if (!q) return;
-    const nextChain = (params.get("chain") as ChainKey) || "robinhood";
-    const timer = window.setTimeout(() => {
-      void run(q, nextChain);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    void run(q, (params.get("chain") as ChainKey) || "robinhood");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

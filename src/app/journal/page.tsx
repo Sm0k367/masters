@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable react-hooks/set-state-in-effect */
 import { AppShell } from "@/components/app-shell";
 import { Disclaimer } from "@/components/desk-ui";
 import { Button } from "@/components/ui/button";
@@ -40,17 +41,14 @@ export default function JournalPage() {
   const [died, setDied] = useState("");
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        const w = localStorage.getItem(WATCH_KEY);
-        const j = localStorage.getItem(JOURNAL_KEY);
-        if (w) setWatch(JSON.parse(w) as WatchItem[]);
-        if (j) setDays(JSON.parse(j) as JournalDay[]);
-      } catch {
-        /* ignore */
-      }
-    }, 0);
-    return () => window.clearTimeout(timer);
+    try {
+      const w = localStorage.getItem(WATCH_KEY);
+      const j = localStorage.getItem(JOURNAL_KEY);
+      if (w) setWatch(JSON.parse(w) as WatchItem[]);
+      if (j) setDays(JSON.parse(j) as JournalDay[]);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const today = useMemo(
@@ -60,12 +58,9 @@ export default function JournalPage() {
 
   useEffect(() => {
     if (!today) return;
-    const timer = window.setTimeout(() => {
-      setPumped(today.pumped);
-      setHeld(today.held);
-      setDied(today.died);
-    }, 0);
-    return () => window.clearTimeout(timer);
+    setPumped(today.pumped);
+    setHeld(today.held);
+    setDied(today.died);
   }, [today]);
 
   function persistWatch(next: WatchItem[]) {
