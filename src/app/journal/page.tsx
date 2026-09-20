@@ -133,7 +133,9 @@ export default function JournalPage() {
                 onChange={(event) => setDied(event.target.value)}
                 placeholder="What died"
               />
-              <Button onClick={saveJournal}>Save {todayStamp()}</Button>
+              <Button type="button" onClick={saveJournal}>
+                Save {todayStamp()}
+              </Button>
             </CardContent>
           </Card>
 
@@ -185,7 +187,7 @@ export default function JournalPage() {
                 placeholder="Why it’s here"
               />
             </div>
-            <Button variant="outline" onClick={addWatch}>
+            <Button type="button" variant="outline" onClick={addWatch}>
               Add
             </Button>
             <div className="space-y-2">
@@ -210,6 +212,7 @@ export default function JournalPage() {
                       ) : null}
                     </div>
                     <Button
+                      type="button"
                       size="xs"
                       variant="ghost"
                       onClick={() => persistWatch(watch.filter((_, i) => i !== index))}

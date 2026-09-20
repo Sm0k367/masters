@@ -36,13 +36,13 @@ function statusClass(status: DiligenceReport["checks"][number]["status"]): strin
 
 function DiligenceInner() {
   const params = useSearchParams();
-  const [query, setQuery] = useState(params.get("q") ?? "");
-  const [chain, setChain] = useState<ChainKey>(
-    (params.get("chain") as ChainKey) || "robinhood",
-  );
+  const qParam = params.get("q") ?? "";
+  const chainParam = (params.get("chain") as ChainKey) || "robinhood";
+  const [query, setQuery] = useState(qParam || "PONS");
+  const [chain, setChain] = useState<ChainKey>(chainParam);
   const [report, setReport] = useState<DiligenceReport | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function run(q = query, nextChain = chain) {
     const trimmed = q.trim();
@@ -66,11 +66,39 @@ function DiligenceInner() {
   }
 
   useEffect(() => {
-    const q = params.get("q");
-    if (!q) return;
-    void run(q, (params.get("chain") as ChainKey) || "robinhood");
+    const fromUrl = qParam.trim();
+    const q = fromUrl || query.trim() || "PONS";
+    let cancelled = false;
+    if (fromUrl) {
+      setQuery(fromUrl);
+      setChain(chainParam);
+    }
+    setLoading(true);
+    setError(null);
+    void (async () => {
+      try {
+        const response = await fetch("/api/diligence", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ q, chain: fromUrl ? chainParam : chain }),
+        });
+        const body = (await response.json()) as DiligenceReport & { error?: string };
+        if (cancelled) return;
+        if (!response.ok) throw new Error(body.error ?? "Check failed");
+        setReport(body);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Check failed");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // query/chain are form state; URL owns the auto-run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [qParam, chainParam]);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -121,6 +149,9 @@ function DiligenceInner() {
         </CardContent>
       </Card>
 
+      {loading && !report ? (
+        <p className="font-mono text-xs text-muted-foreground">Running checklist…</p>
+      ) : null}
       {error ? <ErrorState message={error} onRetry={() => void run()} /> : null}
 
       {report?.pair ? (

@@ -2,14 +2,110 @@
 
 import { AppShell } from "@/components/app-shell";
 import { Disclaimer, ErrorState, LoadingState, Stat, Ticker } from "@/components/desk-ui";
+import { TapeToggle } from "@/components/tape-toggle";
 import { TokenTable } from "@/components/token-table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber, formatUsd } from "@/lib/format";
 import { flashTake } from "@/lib/score";
 import { useLive } from "@/hooks/use-live";
-import type { DailyBrief } from "@/lib/types";
+import type { DailyBrief, ScoredPair } from "@/lib/types";
+import { useState } from "react";
+
+const BUCKETS = [
+  { id: "launches", label: "Sub-48h launches" },
+  { id: "movers", label: "Hottest %" },
+  { id: "volume", label: "Volume leaders" },
+  { id: "sticky", label: "Stickier names" },
+  { id: "stocks", label: "Tokenized stocks" },
+  { id: "chains", label: "Other chains" },
+] as const;
+
+type BucketId = (typeof BUCKETS)[number]["id"];
+
+function bucketCopy(id: BucketId): string {
+  switch (id) {
+    case "launches":
+      return "Brand-new Pons / Uniswap pools. Insane 24h % on thin books. Lottery tickets.";
+    case "movers":
+      return "Giant percent moves. Those prints are usually already done. Do not chase the daily-report winner.";
+    case "volume":
+      return "What Wallet users can actually trade size in — not the +100,000% 16-hour name.";
+    case "sticky":
+      return "PONS, CASHCAT, Artificial Inu, and the liquid tokenized names. Still volatile. Lower (but still high) risk than whatever just launched.";
+    case "stocks":
+      return "Unique to Robinhood Chain. On-chain exposure to real-world names — not stock ownership. They still move with crypto liquidity.";
+    case "chains":
+      return "Same desk, other venues. Solana and Base trenches so you don’t get tunnel vision on chain 4663.";
+    default: {
+      const _exhaustive: never = id;
+      return _exhaustive;
+    }
+  }
+}
+
+function bucketPairs(id: BucketId, brief: DailyBrief): ScoredPair[] {
+  switch (id) {
+    case "launches":
+      return brief.launches;
+    case "movers":
+      return brief.movers;
+    case "volume":
+      return brief.volumeLeaders;
+    case "sticky":
+      return brief.stickier;
+    case "stocks":
+      return brief.tokenized;
+    case "chains":
+      return brief.otherChains;
+    default: {
+      const _exhaustive: never = id;
+      return _exhaustive;
+    }
+  }
+}
+
+function bucketEmpty(id: BucketId): string {
+  switch (id) {
+    case "launches":
+      return "No fresh pools in the Gecko feed right now. Check DexScreener New Pairs.";
+    case "movers":
+      return "No large percent moves in the sample.";
+    case "volume":
+      return "Volume board is empty.";
+    case "sticky":
+      return "Could not resolve sticky names.";
+    case "stocks":
+      return "No tokenized names in this sample. Search NVDA, SPY, SPCX, META.";
+    case "chains":
+      return "Other-chain feeds are quiet.";
+    default: {
+      const _exhaustive: never = id;
+      return _exhaustive;
+    }
+  }
+}
+
+function DailyTape({ brief }: { brief: DailyBrief }) {
+  const [bucket, setBucket] = useState<BucketId>("launches");
+  const selected = BUCKETS.find((item) => item.id === bucket) ?? BUCKETS[0];
+
+  return (
+    <div>
+      <TapeToggle
+        items={BUCKETS}
+        value={bucket}
+        onChange={setBucket}
+        ariaLabel="Daily tape buckets"
+      />
+      <div className="mt-4" data-tape-panel={bucket}>
+        <h2 className="font-heading text-lg tracking-tight">{selected.label}</h2>
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">{bucketCopy(bucket)}</p>
+        <TokenTable pairs={bucketPairs(bucket, brief)} empty={bucketEmpty(bucket)} />
+      </div>
+    </div>
+  );
+}
 
 export function DailyBoard({ initial }: { initial: DailyBrief | null }) {
   const { data, error, loading, updatedAt, reload } = useLive<DailyBrief>(
@@ -109,62 +205,7 @@ export function DailyBoard({ initial }: { initial: DailyBrief | null }) {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="launches">
-          <TabsList variant="line" className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="launches">Sub-48h launches</TabsTrigger>
-            <TabsTrigger value="movers">Hottest %</TabsTrigger>
-            <TabsTrigger value="volume">Volume leaders</TabsTrigger>
-            <TabsTrigger value="sticky">Stickier names</TabsTrigger>
-            <TabsTrigger value="stocks">Tokenized stocks</TabsTrigger>
-            <TabsTrigger value="chains">Other chains</TabsTrigger>
-          </TabsList>
-          <TabsContent value="launches" className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              Brand-new Pons / Uniswap pools. Insane 24h % on thin books. Lottery tickets.
-            </p>
-            <TokenTable
-              pairs={brief.launches}
-              empty="No fresh pools in the Gecko feed right now. Check DexScreener New Pairs."
-            />
-          </TabsContent>
-          <TabsContent value="movers" className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              Giant percent moves. Those prints are usually already done. Do not chase the
-              daily-report winner.
-            </p>
-            <TokenTable pairs={brief.movers} empty="No large percent moves in the sample." />
-          </TabsContent>
-          <TabsContent value="volume" className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              What Wallet users can actually trade size in — not the +100,000% 16-hour name.
-            </p>
-            <TokenTable pairs={brief.volumeLeaders} empty="Volume board is empty." />
-          </TabsContent>
-          <TabsContent value="sticky" className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              PONS, CASHCAT, Artificial Inu, and the liquid tokenized names. Still volatile.
-              Lower (but still high) risk than whatever just launched.
-            </p>
-            <TokenTable pairs={brief.stickier} empty="Could not resolve sticky names." />
-          </TabsContent>
-          <TabsContent value="stocks" className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              Unique to Robinhood Chain. On-chain exposure to real-world names — not stock
-              ownership. They still move with crypto liquidity.
-            </p>
-            <TokenTable
-              pairs={brief.tokenized}
-              empty="No tokenized names in this sample. Search NVDA, SPY, SPCX, META."
-            />
-          </TabsContent>
-          <TabsContent value="chains" className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">
-              Same desk, other venues. Solana and Base trenches so you don’t get tunnel vision
-              on chain 4663.
-            </p>
-            <TokenTable pairs={brief.otherChains} empty="Other-chain feeds are quiet." />
-          </TabsContent>
-        </Tabs>
+        <DailyTape brief={brief} />
 
         {brief.metas.length ? (
           <div className="flex flex-wrap gap-2">

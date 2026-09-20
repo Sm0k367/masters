@@ -42,6 +42,10 @@ export function useLive<T>(
     }
 
     let cancelled = false;
+    const seeded = initial != null;
+    setData(initial);
+    setError(null);
+    setLoading(!seeded);
 
     async function pull(silent: boolean) {
       if (!url) return;
@@ -64,7 +68,7 @@ export function useLive<T>(
       }
     }
 
-    void pull(initial != null);
+    void pull(seeded);
     const timer = window.setInterval(() => {
       void pull(true);
     }, intervalMs);
@@ -73,7 +77,7 @@ export function useLive<T>(
       cancelled = true;
       window.clearInterval(timer);
     };
-    // Seed data is first-paint only; url/interval own the live loop.
+    // Seed belongs to the url that just became active.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, intervalMs]);
 
