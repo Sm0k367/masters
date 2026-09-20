@@ -72,7 +72,7 @@ export function TokenActions({ pair }: { pair: ScoredPair }) {
   return (
     <div className="flex justify-end gap-1">
       <Button size="xs" variant="ghost" asChild>
-        <Link href={`/diligence?chain=${pair.chain}&q=${q}`}>Check</Link>
+        <Link href={`/diligence?chain=${pair.chain}&q=${q}`}>Rug</Link>
       </Button>
       <Button size="xs" variant="outline" asChild>
         <Link href={`/agents?chain=${pair.chain}&q=${q}`}>Desk</Link>

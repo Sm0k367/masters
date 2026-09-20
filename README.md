@@ -10,7 +10,7 @@ Nothing in Robinhood Wallet is a reliable profit play. New launches are lottery 
 - **Daily** — four buckets: chain heat, sub-48h launches, volume leaders, stickier names (PONS, CASHCAT, AI, tokenized NVDA/SPY/SPCX).
 - **Scan** — new pools + trending on Robinhood, Solana, Base, Ethereum, BNB, Arbitrum, Hyperliquid, Plasma, Monad, Sui, TON. Filters for age, liquidity, boosted ads, and quote asset.
 - **Agents** — Scout, Tape, Depth, Risk, Narrative, Desk chief. Optional LLM tape note via [FreeLLMAPI](https://freellmapi.co/) or a public fallback.
-- **60s check** — paste the exact contract. Clone tickers, honeypot/tax/mint/blacklist (GoPlus, including chain `4663`), holder concentration, liquidity vs a $1k clip, paid trending.
+- **Rug** — paste the exact contract. Kill-switch grid (mint / freeze / pause / blacklist / proxy / hidden owner), Honeypot.is buy/sell sim on ETH/Base/BSC/Arb, GoPlus on Robinhood Chain `4663`, RugCheck.xyz on Solana, LP lock, holder concentration, clones, wash tape. Hard fail = default no.
 - **All chains** — the same desk on every venue that actually prints.
 - **Cockpit** — the tight setup: DexScreener, GMGN, Birdeye, Pons, Gecko/RobinSwap, Uniswap/Wallet, Blockscout 4663, X.
 - **Journal** — three lines a night (pumped / held volume / died) plus a sticky-name watchlist. Stored in the browser.

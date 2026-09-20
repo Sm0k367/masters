@@ -144,7 +144,7 @@ function risk(pair: ScoredPair): AgentNote {
     pair.verdict,
     68,
     "No automatic kill-switch from the public tape.",
-    "Still run the 60-second checklist: contract, clones, tax/mint/blacklist, top holders, Wallet Spam/Warning/Suspicious.",
+    "Still run the rug checker: contract kill switches, simulated buy/sell, LP lock, clones, top holders, Wallet Spam/Warning/Suspicious.",
   );
 }
 

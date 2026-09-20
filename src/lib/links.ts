@@ -85,6 +85,119 @@ export function uniswapSwap(chain: ChainKey, address: string): string {
   return `https://app.uniswap.org/swap?chain=${config.dex}&outputCurrency=${address}`;
 }
 
+export function bubblemaps(chain: ChainKey, address: string): string | null {
+  switch (chain) {
+    case "eth":
+      return `https://app.bubblemaps.io/eth/token/${address}`;
+    case "bsc":
+      return `https://app.bubblemaps.io/bsc/token/${address}`;
+    case "base":
+      return `https://app.bubblemaps.io/base/token/${address}`;
+    case "arbitrum":
+      return `https://app.bubblemaps.io/arbitrum/token/${address}`;
+    case "solana":
+      return `https://app.bubblemaps.io/sol/token/${address}`;
+    case "robinhood":
+    case "hyperliquid":
+    case "plasma":
+    case "monad":
+    case "sui":
+    case "ton":
+      return null;
+    default: {
+      const _exhaustive: never = chain;
+      return _exhaustive;
+    }
+  }
+}
+
+export function goplusScanner(chain: ChainKey, address: string): string | null {
+  const id = CHAINS[chain].goplus;
+  if (!id) return null;
+  if (id === "solana") return `https://gopluslabs.io/token-security/solana/${address}`;
+  return `https://gopluslabs.io/token-security/${id}/${address}`;
+}
+
+export function honeypotChecker(chain: ChainKey, address: string): string | null {
+  switch (chain) {
+    case "eth":
+      return `https://honeypot.is/ethereum?address=${address}`;
+    case "bsc":
+      return `https://honeypot.is/?address=${address}`;
+    case "base":
+      return `https://honeypot.is/base?address=${address}`;
+    case "arbitrum":
+      return `https://honeypot.is/arbitrum?address=${address}`;
+    case "robinhood":
+    case "solana":
+    case "hyperliquid":
+    case "plasma":
+    case "monad":
+    case "sui":
+    case "ton":
+      return null;
+    default: {
+      const _exhaustive: never = chain;
+      return _exhaustive;
+    }
+  }
+}
+
+export function rugcheckLink(chain: ChainKey, address: string): string | null {
+  if (chain !== "solana") return null;
+  return `https://rugcheck.xyz/tokens/${address}`;
+}
+
+export function tokenSniffer(chain: ChainKey, address: string): string | null {
+  switch (chain) {
+    case "eth":
+      return `https://tokensniffer.com/token/eth/${address}`;
+    case "bsc":
+      return `https://tokensniffer.com/token/bsc/${address}`;
+    case "base":
+      return `https://tokensniffer.com/token/base/${address}`;
+    case "arbitrum":
+      return `https://tokensniffer.com/token/arb/${address}`;
+    case "robinhood":
+    case "solana":
+    case "hyperliquid":
+    case "plasma":
+    case "monad":
+    case "sui":
+    case "ton":
+      return null;
+    default: {
+      const _exhaustive: never = chain;
+      return _exhaustive;
+    }
+  }
+}
+
+export function defiScanner(chain: ChainKey, address: string): string | null {
+  switch (chain) {
+    case "eth":
+      return `https://de.fi/scanner/contract/${address}?chainId=1`;
+    case "bsc":
+      return `https://de.fi/scanner/contract/${address}?chainId=56`;
+    case "base":
+      return `https://de.fi/scanner/contract/${address}?chainId=8453`;
+    case "arbitrum":
+      return `https://de.fi/scanner/contract/${address}?chainId=42161`;
+    case "robinhood":
+    case "solana":
+    case "hyperliquid":
+    case "plasma":
+    case "monad":
+    case "sui":
+    case "ton":
+      return null;
+    default: {
+      const _exhaustive: never = chain;
+      return _exhaustive;
+    }
+  }
+}
+
 export function externalLinks(pair: PairSnapshot) {
   return [
     {
@@ -99,4 +212,17 @@ export function externalLinks(pair: PairSnapshot) {
     { label: "Explorer", href: explorerToken(pair.chain, pair.base.address) },
     { label: "X", href: xSearch(pair) },
   ];
+}
+
+export function rugToolLinks(pair: PairSnapshot) {
+  const address = pair.base.address;
+  return [
+    ...externalLinks(pair),
+    { label: "GoPlus", href: goplusScanner(pair.chain, address) },
+    { label: "Honeypot.is", href: honeypotChecker(pair.chain, address) },
+    { label: "RugCheck", href: rugcheckLink(pair.chain, address) },
+    { label: "Bubblemaps", href: bubblemaps(pair.chain, address) },
+    { label: "TokenSniffer", href: tokenSniffer(pair.chain, address) },
+    { label: "De.fi", href: defiScanner(pair.chain, address) },
+  ].filter((link): link is { label: string; href: string } => Boolean(link.href));
 }

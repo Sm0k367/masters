@@ -135,11 +135,73 @@ export type DeskReport = {
   generatedAt: string;
 };
 
+export type CheckStatus = "pass" | "fail" | "warn" | "info" | "pending";
+
+export type CheckCategory =
+  | "contract"
+  | "honeypot"
+  | "liquidity"
+  | "holders"
+  | "tape"
+  | "clones"
+  | "solana";
+
 export type DiligenceCheck = {
   id: string;
+  category: CheckCategory;
   label: string;
-  status: "pass" | "fail" | "warn" | "info" | "pending";
+  status: CheckStatus;
   detail: string;
+};
+
+export type RugVerdict = "hard_no" | "caution" | "watch" | "clearer";
+
+export type RugMeter = {
+  score: number;
+  verdict: RugVerdict;
+  headline: string;
+  hardFails: number;
+  warns: number;
+};
+
+export type KillSwitch = {
+  id: string;
+  label: string;
+  status: CheckStatus;
+};
+
+export type DiligenceSource = {
+  name: string;
+  ok: boolean;
+  note: string;
+};
+
+export type SimSnapshot = {
+  source: string;
+  isHoneypot: boolean | null;
+  buyTax: number | null;
+  sellTax: number | null;
+  transferTax: number | null;
+  buyGas: number | null;
+  sellGas: number | null;
+  risk: string | null;
+  openSource: boolean | null;
+  holderFailedPct: number | null;
+  simulationSuccess: boolean | null;
+  flags: string[];
+};
+
+export type LpSnapshot = {
+  lockedPct: number | null;
+  burnedPct: number | null;
+  holderCount: number | null;
+  unlockedTop: {
+    address: string;
+    percent: number;
+    locked: boolean;
+    tag: string;
+    isContract: boolean;
+  }[];
 };
 
 export type DiligenceReport = {
@@ -148,9 +210,44 @@ export type DiligenceReport = {
   chain: ChainKey;
   clones: PairSnapshot[];
   checks: DiligenceCheck[];
-  goplus: Record<string, string | number | boolean | null> | null;
-  holders: { address: string; percent: number; locked: boolean; tag: string }[];
+  meter: RugMeter;
+  killSwitches: KillSwitch[];
+  goplus: {
+    mintable: boolean;
+    freezeable: boolean;
+    honeypot: boolean;
+    blacklist: boolean;
+    hiddenOwner: boolean;
+    ownerRenounced: boolean;
+    openSource: boolean | null;
+    isProxy: boolean;
+    buyTax: number | null;
+    sellTax: number | null;
+    creatorPercent: number | null;
+    ownerPercent: number | null;
+    holderCount: number | null;
+  } | null;
+  sim: SimSnapshot | null;
+  solana: {
+    rugged: boolean;
+    riskScore: number | null;
+    mintAuthority: boolean;
+    freezeAuthority: boolean;
+    mutableMetadata: boolean;
+    risks: { name: string; level: string; description: string }[];
+  } | null;
+  holders: {
+    address: string;
+    percent: number;
+    locked: boolean;
+    tag: string;
+    isContract: boolean;
+  }[];
+  lp: LpSnapshot | null;
   top10Percent: number | null;
+  creatorPercent: number | null;
+  ownerPercent: number | null;
+  sources: DiligenceSource[];
   generatedAt: string;
 };
 

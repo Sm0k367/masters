@@ -1,18 +1,21 @@
 import { CHAINS } from "@/lib/chains";
 import { dexSearch } from "@/lib/dexscreener";
 import { goplusSecurity } from "@/lib/goplus";
+import { honeypotSim } from "@/lib/honeypot";
 import { settled } from "@/lib/http";
 import { resolveToken } from "@/lib/markets";
-import { scorePair } from "@/lib/score";
-import type { ChainKey, DiligenceCheck, DiligenceReport, PairSnapshot } from "@/lib/types";
+import { solanaRugCheck } from "@/lib/rugcheck";
+import { buildKillSwitches, buildRugChecks, buildRugMeter } from "@/lib/rug";
+import type { ChainKey, DiligenceReport, PairSnapshot } from "@/lib/types";
 
-function check(
-  id: string,
-  label: string,
-  status: DiligenceCheck["status"],
-  detail: string,
-): DiligenceCheck {
-  return { id, label, status, detail };
+function emptyMeter(): DiligenceReport["meter"] {
+  return {
+    score: 0,
+    verdict: "hard_no",
+    headline: "Could not resolve that ticker or address. Paste the exact contract.",
+    hardFails: 1,
+    warns: 0,
+  };
 }
 
 export async function runDiligence(
@@ -21,45 +24,46 @@ export async function runDiligence(
 ): Promise<DiligenceReport> {
   const pair = await resolveToken(query, chainHint);
   const chain = pair?.chain ?? chainHint ?? "robinhood";
-  const checks: DiligenceCheck[] = [];
-  let clones: PairSnapshot[] = [];
-  let goplus: DiligenceReport["goplus"] = null;
-  let holders: DiligenceReport["holders"] = [];
-  let top10Percent: number | null = null;
+  const generatedAt = new Date().toISOString();
 
   if (!pair) {
-    checks.push(
-      check(
-        "resolve",
-        "Resolve contract",
-        "fail",
-        "Could not resolve that ticker or address on the public tape. Paste the exact contract.",
-      ),
-    );
     return {
       pair: null,
       query,
       chain,
       clones: [],
-      checks,
+      checks: [
+        {
+          id: "resolve",
+          category: "tape",
+          label: "Resolve contract",
+          status: "fail",
+          detail: "Could not resolve that ticker or address on the public tape. Paste the exact contract.",
+        },
+      ],
+      meter: emptyMeter(),
+      killSwitches: [],
       goplus: null,
+      sim: null,
+      solana: null,
       holders: [],
+      lp: null,
       top10Percent: null,
-      generatedAt: new Date().toISOString(),
+      creatorPercent: null,
+      ownerPercent: null,
+      sources: [{ name: "DexScreener", ok: false, note: "No pair" }],
+      generatedAt,
     };
   }
 
-  checks.push(
-    check(
-      "resolve",
-      "One token, not a vibe",
-      "pass",
-      `${pair.base.name} (${pair.base.symbol}) on ${pair.chainLabel}. ${pair.base.address}`,
-    ),
-  );
+  const [search, security, sim, solana] = await Promise.all([
+    settled(dexSearch(pair.base.symbol)),
+    settled(goplusSecurity(chain, pair.base.address)),
+    settled(honeypotSim(chain, pair.base.address)),
+    settled(solanaRugCheck(chain, pair.base.address)),
+  ]);
 
-  const search = await settled(dexSearch(pair.base.symbol));
-  clones = (search ?? [])
+  const clones: PairSnapshot[] = (search ?? [])
     .filter(
       (item) =>
         item.chain === pair.chain &&
@@ -67,158 +71,117 @@ export async function runDiligence(
         item.base.address.toLowerCase() !== pair.base.address.toLowerCase(),
     )
     .sort((a, b) => b.liquidityUsd - a.liquidityUsd)
-    .slice(0, 6);
+    .slice(0, 8);
 
-  if (clones.length) {
-    checks.push(
-      check(
-        "clone",
-        "Clone ticker check",
-        "warn",
-        `${clones.length} other ${pair.base.symbol} contract(s) on ${pair.chainLabel}. Confirm you have the one with real liquidity.`,
-      ),
-    );
-  } else {
-    checks.push(
-      check(
-        "clone",
-        "Clone ticker check",
-        "pass",
-        `No obvious same-chain ticker clones with a different contract.`,
-      ),
-    );
-  }
+  const checks = buildRugChecks({
+    pair,
+    goplus: security,
+    sim,
+    solana,
+    cloneCount: clones.length,
+    query,
+  });
+  const meter = buildRugMeter(checks);
+  const killSwitches = buildKillSwitches(security, sim, solana);
 
-  const security = await settled(goplusSecurity(chain, pair.base.address));
-  if (!security) {
-    checks.push(
-      check(
-        "goplus",
-        "Tax / mint / blacklist / owner",
-        "info",
-        `No GoPlus coverage for ${CHAINS[chain].label}. Read the explorer yourself before touching it.`,
-      ),
-    );
-  } else {
-    goplus = {
-      honeypot: security.honeypot,
-      cannotBuy: security.cannotBuy,
-      buyTax: security.buyTax,
-      sellTax: security.sellTax,
-      mintable: security.mintable,
-      blacklist: security.blacklist,
-      hiddenOwner: security.hiddenOwner,
-      ownerRenounced: security.ownerRenounced,
-      openSource: security.openSource,
-      holderCount: security.holderCount,
-    };
-    holders = security.holders;
-    top10Percent = security.top10Percent;
+  const holders =
+    (security?.holders.length ? security.holders : solana?.holders) ?? [];
 
-    checks.push(
-      check(
-        "honeypot",
-        "Honeypot / cannot buy",
-        security.honeypot || security.cannotBuy ? "fail" : "pass",
-        security.honeypot || security.cannotBuy
-          ? "GoPlus flags this as unbuyable or a honeypot. Skip."
-          : "GoPlus does not flag a honeypot. Still not a guarantee.",
-      ),
-    );
-    const tax = Math.max(security.buyTax ?? 0, security.sellTax ?? 0);
-    const taxCopy =
-      security.buyTax == null && security.sellTax == null
-        ? "GoPlus did not report a buy/sell tax. Still verify in Wallet."
-        : `Buy tax ${security.buyTax ?? 0}% · sell tax ${security.sellTax ?? 0}%.`;
-    checks.push(
-      check(
-        "tax",
-        "Buy / sell tax",
-        tax > 10 ? "fail" : tax > 5 ? "warn" : "pass",
-        taxCopy,
-      ),
-    );
-    checks.push(
-      check(
-        "mint",
-        "Mint authority",
-        security.mintable ? "fail" : "pass",
-        security.mintable
-          ? "Supply can still be minted. That is a default no."
-          : "Mint not flagged.",
-      ),
-    );
-    checks.push(
-      check(
-        "blacklist",
-        "Blacklist / hidden owner",
-        security.blacklist || security.hiddenOwner ? "fail" : "pass",
-        `Blacklist ${security.blacklist ? "yes" : "no"} · hidden owner ${security.hiddenOwner ? "yes" : "no"} · owner ${security.ownerRenounced ? "renounced/none" : "present"}.`,
-      ),
-    );
-    checks.push(
-      check(
-        "holders",
-        "Top holders",
-        (security.top10Percent ?? 0) >= 50 ? "warn" : "pass",
-        security.holderCount
-          ? `${security.holderCount.toLocaleString()} holders. Top wallets (ex-burn) ≈ ${(security.top10Percent ?? 0).toFixed(1)}%. If 3 wallets own most of it, pass.`
-          : "Holder count unavailable.",
-      ),
-    );
-  }
-
-  checks.push(
-    check(
-      "liq",
-      "Liquidity vs your clip",
-      pair.liquidityUsd < 30_000 ? "fail" : pair.liquidityUsd < 50_000 ? "warn" : "pass",
-      pair.impactFor1k != null
-        ? `Liquidity ${Math.round(pair.liquidityUsd).toLocaleString()} USD. A $1k clip is ~${pair.impactFor1k.toFixed(1)}% of the book.`
-        : "No liquidity number.",
-    ),
-  );
-
-  checks.push(
-    check(
-      "quote",
-      "Quote pair",
-      ["WETH", "ETH", "USDG", "USDC", "SOL", "WSOL"].includes(pair.quote.symbol.toUpperCase())
-        ? "pass"
-        : "warn",
-      `Quoted in ${pair.quote.symbol}. Prefer WETH or USDG on Robinhood Chain.`,
-    ),
-  );
-
-  checks.push(
-    check(
-      "wallet",
-      "Wallet risk labels",
-      "info",
-      "In Robinhood Wallet: Spam / Warning / Suspicious = default no. Masters cannot read the in-app label. Check it before you swap.",
-    ),
-  );
-
-  checks.push(
-    check(
-      "boost",
-      "Paid trending",
-      pair.boosted ? "warn" : "pass",
-      pair.boosted
-        ? "This token is boosted on DexScreener. Trending is not organic flow."
-        : "No active DexScreener boost on the latest feed.",
-    ),
-  );
+  const sources: DiligenceReport["sources"] = [
+    {
+      name: "DexScreener",
+      ok: true,
+      note: `${pair.dexLabel} · ${pair.chainLabel}`,
+    },
+    {
+      name: "GoPlus",
+      ok: Boolean(security),
+      note: security
+        ? `${CHAINS[chain].label} token security`
+        : CHAINS[chain].goplus
+          ? "No payload"
+          : "Chain not covered",
+    },
+    {
+      name: "Honeypot.is",
+      ok: Boolean(sim),
+      note: sim ? "Live buy/sell sim" : "No sim on this chain",
+    },
+    {
+      name: "RugCheck.xyz",
+      ok: Boolean(solana),
+      note: chain === "solana" ? (solana ? "Mint report" : "No report") : "Solana only",
+    },
+  ];
 
   return {
-    pair: scorePair(pair),
+    pair,
     query,
     chain,
     clones,
     checks,
-    goplus,
+    meter,
+    killSwitches,
+    goplus: security
+      ? {
+          mintable: security.mintable,
+          freezeable: security.freezeable,
+          honeypot: security.honeypot,
+          blacklist: security.blacklist,
+          hiddenOwner: security.hiddenOwner,
+          ownerRenounced: security.ownerRenounced,
+          openSource: security.openSource,
+          isProxy: security.isProxy,
+          buyTax: security.buyTax,
+          sellTax: security.sellTax,
+          creatorPercent: security.creatorPercent,
+          ownerPercent: security.ownerPercent,
+          holderCount: security.holderCount,
+        }
+      : null,
+    sim: sim
+      ? {
+          source: "honeypot.is",
+          isHoneypot: sim.isHoneypot,
+          buyTax: sim.buyTax,
+          sellTax: sim.sellTax,
+          transferTax: sim.transferTax,
+          buyGas: sim.buyGas,
+          sellGas: sim.sellGas,
+          risk: sim.risk,
+          openSource: sim.openSource,
+          holderFailedPct: sim.holderFailedPct,
+          simulationSuccess: sim.simulationSuccess,
+          flags: sim.flags,
+        }
+      : null,
+    solana: solana
+      ? {
+          rugged: solana.rugged,
+          riskScore: solana.riskScore,
+          mintAuthority: solana.mintAuthority,
+          freezeAuthority: solana.freezeAuthority,
+          mutableMetadata: solana.mutableMetadata,
+          risks: solana.risks.map((risk) => ({
+            name: risk.name,
+            level: risk.level,
+            description: risk.description,
+          })),
+        }
+      : null,
     holders,
-    top10Percent,
-    generatedAt: new Date().toISOString(),
+    lp: security
+      ? {
+          lockedPct: security.lpLockedPct,
+          burnedPct: security.lpBurnedPct,
+          holderCount: security.lpHolderCount,
+          unlockedTop: security.lpHolders.filter((row) => !row.locked).slice(0, 5),
+        }
+      : null,
+    top10Percent: security?.top10Percent ?? null,
+    creatorPercent: security?.creatorPercent ?? null,
+    ownerPercent: security?.ownerPercent ?? null,
+    sources,
+    generatedAt,
   };
 }

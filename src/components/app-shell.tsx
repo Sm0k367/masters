@@ -22,7 +22,7 @@ const NAV = [
   { href: "/scan", label: "Scan", icon: Radar },
   { href: "/live", label: "Live", icon: Bot },
   { href: "/agents", label: "Agents", icon: Terminal },
-  { href: "/diligence", label: "60s check", icon: ShieldCheck },
+  { href: "/diligence", label: "Rug", icon: ShieldCheck },
   { href: "/chains", label: "All chains", icon: LayoutGrid },
   { href: "/cockpit", label: "Cockpit", icon: Crosshair },
   { href: "/journal", label: "Journal", icon: BookOpen },
@@ -91,7 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Paste contract or ticker — 60s checklist"
+              placeholder="Paste contract — rug check"
               className="font-mono text-xs"
             />
             <Button type="submit" size="sm">
