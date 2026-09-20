@@ -163,7 +163,7 @@ async function geckoList(
   path: string,
   chain: ChainConfig,
 ): Promise<PairSnapshot[]> {
-  return cached(`gecko:${path}`, 20_000, async () => {
+  return cached(`gecko:${path}`, 45_000, async () => {
     const body = await fetchJsonRetry<GeckoList>(
       `${GECKO}${path}?include=base_token,quote_token,dex`,
     );
@@ -198,10 +198,10 @@ export async function geckoTokenPools(
 }
 
 export function isTrenchPair(pair: PairSnapshot): boolean {
-  if (isQuoteSymbol(pair.base.symbol) && isQuoteSymbol(pair.quote.symbol)) {
-    return false;
-  }
-  return !isQuoteSymbol(pair.base.symbol);
+  const baseQuote = isQuoteSymbol(pair.base.symbol);
+  const quoteQuote = isQuoteSymbol(pair.quote.symbol);
+  // Keep inverted books (USDT0/WXPL). Drop only quote-quote stables.
+  return !(baseQuote && quoteQuote);
 }
 
 export function chainFromNetworkId(id: string): ChainKey | null {

@@ -144,7 +144,7 @@ export const CHAINS: Record<ChainKey, ChainConfig> = {
     eip155: null,
     goplus: null,
     native: "XPL",
-    quotes: ["USDT0", "USDT", "WETH"],
+    quotes: ["USDT0", "USDT", "WETH", "WXPL", "XPL"],
     explorerToken: (address) => `https://plasmascan.to/token/${address}`,
     dexScreener: "https://dexscreener.com/plasma",
     gmgn: "https://gmgn.ai",
@@ -258,6 +258,7 @@ export function isQuoteSymbol(symbol: string): boolean {
     "HYPE",
     "WHYPE",
     "USDT0",
+    "USD₮",
     "SUI",
     "TON",
     "WMON",
@@ -268,8 +269,10 @@ export function isQuoteSymbol(symbol: string): boolean {
   ].includes(upper);
 }
 
-export function preferredQuote(symbol: string): boolean {
-  return ["WETH", "ETH", "USDG", "USDC", "SOL", "WSOL"].includes(
-    symbol.toUpperCase(),
-  );
+export function preferredQuote(symbol: string, chain?: ChainKey): boolean {
+  const upper = symbol.toUpperCase();
+  const global = ["WETH", "ETH", "USDG", "USDC", "USDT", "SOL", "WSOL"];
+  if (global.includes(upper)) return true;
+  if (!chain) return false;
+  return CHAINS[chain].quotes.some((quote) => quote.toUpperCase() === upper);
 }

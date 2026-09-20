@@ -92,7 +92,10 @@ export function classifyPair(pair: PairSnapshot): TokenClass {
   }
   if (CAT_WORDS.some((word) => text.includes(word))) return "cat_meme";
   if (text.includes("artificial") || /\bai\b/.test(text)) return "ai_meme";
-  if (pair.liquidityUsd < 30_000) return "dust";
+  if (pair.liquidityUsd < 30_000) {
+    if (pair.volume.h24 >= 100_000) return "mid_tier";
+    return "dust";
+  }
   if (pair.liquidityUsd >= 250_000 && (ageHours == null || ageHours >= 48)) {
     return "mid_tier";
   }

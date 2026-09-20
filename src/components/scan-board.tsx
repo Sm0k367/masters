@@ -29,7 +29,8 @@ function ScanTape({
   newPools: ScoredPair[];
   trending: ScoredPair[];
 }) {
-  const [view, setView] = useState<ScanView>(newPools.length ? "new" : "trend");
+  const [picked, setPicked] = useState<ScanView | null>(null);
+  const view: ScanView = picked ?? (newPools.length ? "new" : "trend");
   const pairs = view === "new" ? newPools : trending;
 
   return (
@@ -40,7 +41,7 @@ function ScanTape({
           { id: "trend" as const, label: `Trending (${trending.length})` },
         ]}
         value={view}
-        onChange={setView}
+        onChange={setPicked}
         ariaLabel="Scanner views"
       />
       <div className="mt-4" data-tape-panel={view}>
@@ -69,7 +70,7 @@ export function ScanBoard({ initial }: { initial: ScanResponse | null }) {
   const seed = chain === initial?.chain ? initial : null;
   const { data, error, loading, reload } = useLive<ScanResponse>(
     `/api/scan?chain=${chain}`,
-    20_000,
+    30_000,
     seed,
   );
   const scan = data ?? seed;
@@ -162,7 +163,7 @@ export function ScanBoard({ initial }: { initial: ScanResponse | null }) {
                   onCheckedChange={setPreferredQuoteOnly}
                 />
                 <label htmlFor="quote" className="text-xs">
-                  WETH / USDG / USDC / SOL
+                  Preferred quotes
                 </label>
               </div>
             </div>

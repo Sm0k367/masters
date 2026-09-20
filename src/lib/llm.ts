@@ -5,6 +5,16 @@ import { verdictLabel } from "@/lib/score";
 
 type LlmResult = { text: string | null; model: string | null };
 
+async function timedFetch(url: string, init: RequestInit, timeoutMs = 8_000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function fallbackBrief(pair: ScoredPair, agents: AgentNote[]): string {
   const chief = agents.find((agent) => agent.id === "chief");
   return [
@@ -33,7 +43,7 @@ async function completeChat(messages: { role: "system" | "user"; content: string
 
   if (base && key) {
     try {
-      const response = await fetch(`${base}/chat/completions`, {
+      const response = await timedFetch(`${base}/chat/completions`, {
         method: "POST",
         headers: {
           authorization: `Bearer ${key}`,
@@ -59,7 +69,7 @@ async function completeChat(messages: { role: "system" | "user"; content: string
   }
 
   try {
-    const response = await fetch("https://text.pollinations.ai/openai", {
+    const response = await timedFetch("https://text.pollinations.ai/openai", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

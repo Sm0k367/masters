@@ -38,7 +38,8 @@ function mergePairs(...groups: (PairSnapshot[] | null)[]): PairSnapshot[] {
 }
 
 function trench(pairs: PairSnapshot[]): PairSnapshot[] {
-  return pairs.filter(isTrenchPair);
+  const kept = pairs.filter(isTrenchPair);
+  return kept.length ? kept : pairs;
 }
 
 function heatFrom(chain: ChainKey, pairs: PairSnapshot[], launches: PairSnapshot[]): HeatStat {
@@ -205,7 +206,7 @@ export async function resolveToken(
       if (pairs && pairs.length) {
         const ranked = [...pairs].sort((a, b) => b.liquidityUsd - a.liquidityUsd);
         const preferred =
-          ranked.find((pair) => preferredQuote(pair.quote.symbol)) ?? ranked[0];
+          ranked.find((pair) => preferredQuote(pair.quote.symbol, pair.chain)) ?? ranked[0];
         return scorePair(preferred);
       }
     }

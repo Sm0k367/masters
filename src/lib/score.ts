@@ -72,7 +72,13 @@ export function scorePair(pair: PairSnapshot): ScoredPair {
     score -= 8;
   }
 
-  if (pair.liquidityUsd < DUST_LIQ) {
+  if (pair.liquidityUsd <= 0 && pair.volume.h24 >= SIZE_LIQ) {
+    flags.push("warning");
+    reasons.push(
+      "Venue did not report a pool reserve. Volume is not an exit — size as if the book is unknown.",
+    );
+    score -= 6;
+  } else if (pair.liquidityUsd < DUST_LIQ) {
     flags.push("thin_book");
     reasons.push(`Liquidity ${Math.round(pair.liquidityUsd)} is dust. Skip unless you accept a total loss.`);
     score -= 25;
@@ -99,9 +105,9 @@ export function scorePair(pair: PairSnapshot): ScoredPair {
     reasons.push("Survived more than two days — rarer than a ticker that just printed.");
   }
 
-  if (!preferredQuote(pair.quote.symbol)) {
+  if (!preferredQuote(pair.quote.symbol, pair.chain)) {
     flags.push("warning");
-    reasons.push(`Quote is ${pair.quote.symbol}, not WETH/USDG. Extra hop risk.`);
+    reasons.push(`Quote is ${pair.quote.symbol}, not a preferred quote on ${pair.chainLabel}. Extra hop risk.`);
     score -= 4;
   }
 
@@ -253,9 +259,13 @@ export function filterScan(
   },
 ): ScoredPair[] {
   return pairs.filter((pair) => {
-    if (opts.minLiq != null && pair.liquidityUsd < opts.minLiq) return false;
+    if (opts.minLiq != null) {
+      const reported = pair.liquidityUsd >= opts.minLiq;
+      const volumeProxy = pair.liquidityUsd <= 0 && pair.volume.h24 >= opts.minLiq;
+      if (!reported && !volumeProxy) return false;
+    }
     if (opts.hideBoosted && pair.boosted) return false;
-    if (opts.preferredQuoteOnly && !preferredQuote(pair.quote.symbol)) return false;
+    if (opts.preferredQuoteOnly && !preferredQuote(pair.quote.symbol, pair.chain)) return false;
     const hours = pair.ageMs != null ? pair.ageMs / 3_600_000 : null;
     const minutes = pair.ageMs != null ? pair.ageMs / 60_000 : null;
     if (opts.maxAgeHours != null && hours != null && hours > opts.maxAgeHours) return false;
