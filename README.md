@@ -44,8 +44,24 @@ Without a key, the rules desk still runs. Briefings fall back to a public text e
 4. Execute in Robinhood Wallet or Uniswap V3/V4. Slippage only as high as needed. Take partials.
 5. Journal three lines at night.
 
+## Deploy to Cloudflare
+
+Production Worker: `masters`  
+Custom domain: [https://masters.epictechai.app](https://masters.epictechai.app)
+
+This is an OpenNext Cloudflare Worker (`@opennextjs/cloudflare`), same path as the other Epic Tech AI Next.js desks. Wrangler attaches the custom domain on deploy — `epictechai.app` must stay on the same Cloudflare account.
+
+```bash
+npx wrangler login
+npm run deploy
+```
+
+`npm run preview` builds the Worker and serves it locally. Optional LLM keys (`FREELLM_*`) can be set with `wrangler secret put` if you want the live desk to use FreeLLMAPI instead of the public fallback.
+
+GitHub Actions deploys `main` when `CLOUDFLARE_API_TOKEN` (and optionally `CLOUDFLARE_ACCOUNT_ID`) are set as repository secrets.
+
 ## Stack
 
-Next.js, TypeScript, Tailwind, shadcn/ui. Live data from GeckoTerminal, DexScreener, CoinGecko, and GoPlus. No database.
+Next.js, TypeScript, Tailwind, shadcn/ui, OpenNext on Cloudflare Workers. Live data from GeckoTerminal, DexScreener, CoinGecko, and GoPlus. No database.
 
 Not financial advice. Only money you can lose completely. Verify every contract yourself.
