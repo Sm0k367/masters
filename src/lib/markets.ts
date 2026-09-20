@@ -212,7 +212,7 @@ export async function resolveToken(
     }
   }
 
-  const found = await dexSearch(trimmed);
+  const found = (await settled(dexSearch(trimmed))) ?? [];
   const scoped = chainHint ? found.filter((pair) => pair.chain === chainHint) : found;
   const exact = scoped.filter(
     (pair) => pair.base.symbol.toUpperCase() === trimmed.toUpperCase(),
