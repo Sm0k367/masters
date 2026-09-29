@@ -67,11 +67,13 @@ This is an OpenNext Cloudflare Worker (`@opennextjs/cloudflare`), same path as t
 
 ```bash
 npx wrangler login
-npm run deploy
-npx wrangler secret put LIVE_KEY
+npm run deploy:live
+npx wrangler secret put LIVE_KEY -c wrangler.live.jsonc
 ```
 
-`npm run preview` builds the Worker and serves it locally. Optional LLM keys (`FREELLM_*`) and the live trader key (`LIVE_KEY`) are `wrangler secret put` values. `LIVE_KEY` is required to arm the desk or write fills; anyone can POST `{ "action": "kill" }` to halt new clips.
+`npm run deploy:live` publishes the `/api/live` Worker (kill switch + book + intent) over the `masters` Worker name and `masters.epictechai.app`. That is the production path. `npm run deploy:full` is the heavier OpenNext build of the whole desk.
+
+`LIVE_KEY` is required to arm the desk or write fills; anyone can POST `{ "action": "kill" }` to halt new clips.
 
 GitHub Actions deploys `main` when `CLOUDFLARE_API_TOKEN` (and optionally `CLOUDFLARE_ACCOUNT_ID`) are set as repository secrets.
 
