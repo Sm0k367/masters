@@ -340,6 +340,61 @@ function isFill(value: unknown): value is LiveFill {
   );
 }
 
+const STATUS_HTML = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Masters live desk</title>
+    <style>
+      :root { color-scheme: dark; }
+      body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: #09090b; color: #fafafa; }
+      main { max-width: 42rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+      h1 { font-size: 1.35rem; letter-spacing: -0.02em; margin: 0 0 0.35rem; }
+      p.sub { color: #a1a1aa; margin: 0 0 1.5rem; font-size: 0.95rem; }
+      .row { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+      .pill { border: 1px solid #27272a; background: #18181b; border-radius: 999px; padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+      .pill.on { border-color: #14532d; background: #052e16; color: #86efac; }
+      .pill.off { border-color: #7f1d1d; background: #450a0a; color: #fecaca; }
+      pre { white-space: pre-wrap; word-break: break-word; background: #111113; border: 1px solid #27272a; border-radius: 0.75rem; padding: 1rem; font-size: 0.85rem; line-height: 1.45; }
+      .err { color: #fca5a5; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Masters live desk</h1>
+      <p class="sub">Robinhood Agentic ••••5205 · $10 clips · public kill switch</p>
+      <div id="meta" class="row"><span class="pill">loading…</span></div>
+      <pre id="out">Fetching /api/live…</pre>
+    </main>
+    <script>
+      async function load() {
+        const out = document.getElementById("out");
+        const meta = document.getElementById("meta");
+        try {
+          const res = await fetch("/api/live", { cache: "no-store" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || res.statusText);
+          const armed = Boolean(data.book && data.book.armed);
+          meta.innerHTML =
+            '<span class="pill ' + (armed ? "on" : "off") + '">' + (armed ? "armed" : "kill switch on") + "</span>" +
+            '<span class="pill">' + (data.intent && data.intent.action ? data.intent.action : "hold") + "</span>" +
+            '<span class="pill">' + (data.book && data.book.accountMasked ? data.book.accountMasked : "") + "</span>";
+          out.textContent = (data.intent && data.intent.headline ? data.intent.headline + "\\n\\n" + (data.intent.body || "") : "") +
+            "\\n\\n" + JSON.stringify(data, null, 2);
+        } catch (error) {
+          meta.innerHTML = '<span class="pill off">error</span>';
+          out.className = "err";
+          out.textContent = error instanceof Error ? error.message : "Live tick failed";
+        }
+      }
+      load();
+      setInterval(load, 15000);
+    </script>
+  </body>
+</html>
+`;
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -420,11 +475,12 @@ export default {
     }
 
     if (path === "/" || path === "/live") {
-      return json({
-        ok: true,
-        service: "masters",
-        live: "/api/live",
-        kill: 'POST /api/live {"action":"kill"}',
+      return new Response(STATUS_HTML, {
+        status: 200,
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "no-store",
+        },
       });
     }
 
